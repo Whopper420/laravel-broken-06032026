@@ -7,6 +7,17 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Scope;
+
+class PublishedScope implements Scope
+{
+    public function apply(Builder $builder, Model $model)
+    {
+        $builder->where('post_statuses_id', 2);
+    }
+}
 
 class PostController extends Controller implements HasMiddleware
 {
@@ -22,7 +33,13 @@ class PostController extends Controller implements HasMiddleware
     public function index()
     {
 
-        return Post::all();
+         $posts = Post::with(['comments' => function ($query) {
+            $query->whereNull('flagged_at'); // only unflagged comments
+        }])->get();
+
+        return response()->json([
+            'posts' => $posts
+        ]);
     }
 
     /**
@@ -32,7 +49,8 @@ class PostController extends Controller implements HasMiddleware
     {
         $fields = $request->validate([
             'title' => 'required|max:255',
-            'body' => 'required'
+            'body' => 'required',
+            'post_statuses_id' => 'required'
         ]);
 
         $post = $request->user()->posts()->create($fields);
@@ -56,7 +74,8 @@ class PostController extends Controller implements HasMiddleware
         Gate::authorize('modify', $post);
         $fields = $request->validate([
             'title' => 'required|max:255',
-            'body' => 'required'
+            'body' => 'required',
+            'post_statuses_id' => 'required'
         ]);
 
         $post->update($fields);

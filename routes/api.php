@@ -17,3 +17,5 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 Route::apiResource('posts.comments', CommentController::class);
+
+Route::post('/posts/{post}/comments/{comment}/flag', [CommentController::class, 'flag'])->middleware('auth:sanctum');
